@@ -80,14 +80,32 @@ pub use test::{TestDispatcher, TestScreenCaptureSource, TestScreenCaptureStream}
 #[cfg(all(target_os = "macos", any(test, feature = "test-support")))]
 pub use visual_test::VisualTestPlatform;
 
-// TODO(jk): return an enum instead of a string
+#[cfg(any(target_os = "linux", target_os = "freebsd"))]
+#[derive(Debug)]
+pub enum Compositor {
+    Headless,
+    Wayland,
+    X11,
+}
+
+#[cfg(any(target_os = "linux", target_os = "freebsd"))]
+impl std::fmt::Display for Compositor {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(match self {
+            Self::Headless => "Headless",
+            Self::Wayland => "Wayland",
+            Self::X11 => "X11",
+        })
+    }
+}
+
 /// Return which compositor we're guessing we'll use.
 /// Does not attempt to connect to the given compositor.
 #[cfg(any(target_os = "linux", target_os = "freebsd"))]
 #[inline]
-pub fn guess_compositor() -> &'static str {
+pub fn guess_compositor() -> Compositor {
     if std::env::var_os("ZED_HEADLESS").is_some() {
-        return "Headless";
+        return Compositor::Headless;
     }
 
     #[cfg(feature = "wayland")]
@@ -104,11 +122,11 @@ pub fn guess_compositor() -> &'static str {
     let use_x11 = x11_display.is_some_and(|display| !display.is_empty());
 
     if use_wayland {
-        "Wayland"
+        Compositor::Wayland
     } else if use_x11 {
-        "X11"
+        Compositor::X11
     } else {
-        "Headless"
+        Compositor::Headless
     }
 }
 

@@ -135,7 +135,8 @@ impl Render for StatusBar {
                         let needs_gap_fix = {
                             // Running on Wayland and using some scaling levels other than 100% causes a
                             // 1px gap above the status bar; adding a margin avoids this.
-                            gpui::guess_compositor() == "Wayland" && window.scale_factor() != 1.0
+                            gpui::guess_compositor() == gpui::Compositor::Wayland
+                                && window.scale_factor() != 1.0
                         };
                         #[cfg(not(target_os = "linux"))]
                         let needs_gap_fix = false;

@@ -551,7 +551,7 @@ impl TitleBar {
 
         if can_use_microphone && screen_sharing_supported {
             #[cfg(target_os = "linux")]
-            let is_wayland = gpui::guess_compositor() == "Wayland";
+            let is_wayland = gpui::guess_compositor() == gpui::Compositor::Wayland;
             #[cfg(not(target_os = "linux"))]
             let is_wayland = false;
 

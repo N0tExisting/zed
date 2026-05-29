@@ -195,7 +195,7 @@ pub fn init(cx: &mut App) {
                             room.unshare_screen(true, cx).ok();
                         } else {
                             #[cfg(target_os = "linux")]
-                            let is_wayland = gpui::guess_compositor() == "Wayland";
+                            let is_wayland = gpui::guess_compositor() == gpui::Compositor::Wayland;
                             #[cfg(not(target_os = "linux"))]
                             let is_wayland = false;
 
