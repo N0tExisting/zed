@@ -23,35 +23,50 @@ pub(crate) use wayland::*;
 #[cfg(feature = "x11")]
 pub(crate) use x11::*;
 
+use gpui::{Compositor, Platform, guess_compositor};
+
 use std::rc::Rc;
 
+fn new_headless() -> Rc<dyn Platform> {
+    Rc::new(LinuxPlatform {
+        inner: HeadlessClient::new(),
+    })
+}
+
+fn disabled_compositor(compositor: Compositor) -> Rc<dyn Platform> {
+    eprintln!(
+        "Got compositor `{}`, but that compositor-feature was disabled",
+        compositor
+    );
+    new_headless()
+}
+
 /// Returns the default platform implementation for the current OS.
-pub fn current_platform(headless: bool) -> Rc<dyn gpui::Platform> {
+pub fn current_platform(headless: bool) -> Rc<dyn Platform> {
     #[cfg(feature = "x11")]
     use anyhow::Context as _;
 
     if headless {
-        return Rc::new(LinuxPlatform {
-            inner: HeadlessClient::new(),
-        });
+        return new_headless();
     }
 
-    match gpui::guess_compositor() {
+    match guess_compositor() {
+        Compositor::Headless => new_headless(),
+
         #[cfg(feature = "wayland")]
-        gpui::Compositor::Wayland => Rc::new(LinuxPlatform {
+        Compositor::Wayland => Rc::new(LinuxPlatform {
             inner: WaylandClient::new(),
         }),
+        #[cfg(not(feature = "wayland"))]
+        Compositor::Wayland => disabled_compositor(Compositor::Wayland),
 
         #[cfg(feature = "x11")]
-        gpui::Compositor::X11 => Rc::new(LinuxPlatform {
+        Compositor::X11 => Rc::new(LinuxPlatform {
             inner: X11Client::new()
                 .context("Failed to initialize X11 client.")
                 .unwrap(),
         }),
-
-        gpui::Compositor::Headless => Rc::new(LinuxPlatform {
-            inner: HeadlessClient::new(),
-        }),
-        //_ => unreachable!(),
+        #[cfg(not(feature = "x11"))]
+        Compositor::X11 => disabled_compositor(Compositor::X11),
     }
 }
