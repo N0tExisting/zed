@@ -33,9 +33,9 @@ fn new_headless() -> Rc<dyn Platform> {
     })
 }
 
-/// This can only be reached when the feature `x11`/`wayland` is enabled in gpui but not here
+/// This can only be reached when the feature `x11`/`wayland` is enabled in gpui but not here.
 /// (It shoudn't happen, but it did happen to me, so ¯\_(ツ)_/¯)
-/// panics from ´unreachable!´
+/// Panics from a ´unreachable!´.
 fn disabled_compositor(compositor: Compositor) -> Rc<dyn Platform> {
     unreachable!(
         "Got compositor `{}`, but gpui_linux was compiled without that compositor feature",
