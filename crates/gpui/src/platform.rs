@@ -80,15 +80,12 @@ pub use test::{TestDispatcher, TestScreenCaptureSource, TestScreenCaptureStream}
 #[cfg(all(target_os = "macos", any(test, feature = "test-support")))]
 pub use visual_test::VisualTestPlatform;
 
-/// What Linux Compositor to use
+#[expect(missing_docs)]
 #[cfg(any(target_os = "linux", target_os = "freebsd"))]
 #[derive(Debug)]
 pub enum Compositor {
-    /// Headless
     Headless,
-    /// Wayland
     Wayland,
-    /// x11
     X11,
 }
 
