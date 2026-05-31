@@ -71,5 +71,7 @@ pub fn current_platform(headless: bool) -> Rc<dyn Platform> {
         }),
         #[cfg(not(feature = "x11"))]
         Compositor::X11 => disabled_compositor(Compositor::X11),
+        //#[cfg(any(not(feature = "x11"), not(feature = "wayland")))]
+        //unrecognized => disabled_compositor(unrecognized),
     }
 }
