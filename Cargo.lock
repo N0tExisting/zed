@@ -8201,6 +8201,7 @@ dependencies = [
  "gpui_wgpu",
  "http_client",
  "image",
+ "indoc",
  "itertools 0.14.0",
  "libc",
  "log",

@@ -23,6 +23,8 @@ pub(crate) use wayland::*;
 #[cfg(feature = "x11")]
 pub(crate) use x11::*;
 
+use indoc::indoc;
+
 use gpui::{Compositor, Platform, guess_compositor};
 
 use std::rc::Rc;
@@ -38,7 +40,10 @@ fn new_headless() -> Rc<dyn Platform> {
 /// Panics from a ´unreachable!´.
 fn disabled_compositor(compositor: Compositor) -> Rc<dyn Platform> {
     unreachable!(
-        "Got compositor `{}`, but gpui_linux was compiled without that compositor feature",
+        indoc! {"
+            Got compositor `{}`, but `gpui_linux` was compiled without that compositor feature!
+            Did you enable the compositor features in `gpui_platform`? (enable them there insatead of in `gpui`)
+        "},
         compositor
     );
     new_headless()

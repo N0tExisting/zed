@@ -82,6 +82,7 @@ oo7 = { version = "0.6", default-features = false, features = [
 ] }
 calloop = "0.14.3"
 raw-window-handle = "0.6"
+indoc.workspace = true
 
 # Used in both windowing options
 ashpd = { workspace = true, optional = true }
