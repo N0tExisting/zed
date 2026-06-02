@@ -25,6 +25,7 @@ mod platform_scheduler;
 pub(crate) use platform_scheduler::PlatformScheduler;
 mod geometry;
 mod global;
+pub mod granular;
 mod input;
 mod inspector;
 mod interactive;
@@ -96,6 +97,7 @@ pub use global::*;
 pub use gpui_macros::{
     AppContext, IntoElement, Render, VisualContext, bench, property_test, register_action, test,
 };
+//pub use granular; // TODO: Use ::*
 
 /// Defines a Criterion benchmark group for benchmarks annotated with [`gpui::bench`].
 ///
