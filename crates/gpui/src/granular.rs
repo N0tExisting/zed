@@ -8,8 +8,13 @@ use crate::{
     TextStyle, WeakEntity, Window,
 };
 use anyhow::Result;
-use collections::FxHashSet;
+use collections::{FxBuildHasher, FxHashSet, IndexMap};
 use refineable::Refineable;
+use slotmap::{HopSlotMap, Key, SecondaryMap, new_key_type};
+use std::{
+    ops::{Deref, DerefMut},
+    sync::atomic::{AtomicBool, Ordering},
+};
 
 /// Train for Elements & Views that want to update granularly
 pub trait Granular {
@@ -19,6 +24,8 @@ pub trait Granular {
 /// Generic Granular [Element]/[View]
 #[derive(Debug)]
 pub struct AnyGranular {}
+
+new_key_type! { pub struct TextKey; }
 
 /// A Fragment of text that can be updated and placed within a [`GranularText`]
 #[derive(Debug)]
@@ -237,3 +244,103 @@ pub struct ElementFragment {}
 /// An Element that can dynamically gain and lose children
 #[derive(Debug)]
 pub struct GranularChildren {}
+
+#[inline]
+fn assert_none<T: std::fmt::Debug>(opt: Option<T>) {
+    //assert_matches!(opt, None);
+    assert!(opt.is_none(), "Expected None, but got {:?}", opt);
+}
+
+#[derive(Debug)]
+struct GranularStore<K: Key, V, C> {
+    map: HopSlotMap<K, V>,
+    index: IndexMap<K, bool>,
+    cache: SecondaryMap<K, C>,
+}
+
+impl<K: Key, V, C: std::fmt::Debug> GranularStore<K, V, C> {
+    //type KV = (K, V);
+    //type KI = (K, usize);
+    //type IV = (usize, V);
+    //type VC = (V, C);
+    //type VDC = (V, bool, C);
+    //type VIDC = (V, usize, bool, C);
+    //type KVIDC = (K, V, usize, bool, C);
+
+    fn with_capacity(capacity: usize) -> Self {
+        Self {
+            map: HopSlotMap::with_capacity_and_key(capacity),
+            index: IndexMap::with_capacity_and_hasher(capacity, FxBuildHasher),
+            cache: SecondaryMap::with_capacity(capacity),
+        }
+    }
+
+    fn push(&mut self, value: V, cache: C) -> (K, usize) {
+        let key = self.map.insert(value);
+        let (index, val) = self.index.insert_full(key, true);
+        assert_none(val);
+        assert_none(self.cache.insert(key, cache));
+        (key, index)
+    }
+
+    fn insert_at(&mut self, value: V, cache: C) -> K {
+        //self.index.shift_insert;
+        //self.index.insert_before;
+        todo!()
+    }
+
+    fn remove(&mut self, key: K) -> Option<(K, V, usize, bool, C)> {
+        let value = self.map.remove(key)?;
+        let (index, _k, dirty) = self.index.shift_remove_full(&key).unwrap();
+        let cache = self.cache.remove(key).unwrap();
+
+        Some((key, value, index, dirty, cache))
+    }
+
+    fn swap_indices(
+        &mut self,
+        a: &K,
+        b: &K,
+    ) -> Result<(usize, usize), (Option<usize>, Option<usize>)> {
+        let i_a = self.index.get_index_of(a);
+        let i_b = self.index.get_index_of(b);
+
+        if i_a.is_none() || i_b.is_none() {
+            return Err((i_a, i_b));
+        }
+
+        let i_a = i_a.unwrap();
+        let i_b = i_b.unwrap();
+
+        self.index.swap_indices(i_a, i_b);
+
+        Ok((i_a, i_b))
+    }
+
+    fn move_index(&mut self, key: &K, to: usize) -> Result<()> {
+        let i_from = self.index.get_index_of(key);
+        anyhow::ensure!(i_from.is_some(), "Key does not exist");
+        let i_from = i_from.unwrap();
+
+        self.index.move_index(i_from, to);
+        Ok(())
+    }
+
+    fn get_index(&self, key: &K) -> Option<usize> {
+        self.index.get_index_of(key)
+    }
+
+    fn remajigger(&mut self) {
+        self.index.last();
+    }
+}
+
+impl<C> GranularStore<TextKey, GranularString, C> {
+    fn to_single_string(&self) -> String {
+        self.index
+            .iter()
+            .map(|(key, _)| self.map.get(key.clone()))
+            .filter_map(std::convert::identity)
+            .fold("".into(), |text, str| text + str.str())
+    }
+}
